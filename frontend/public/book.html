@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glow Beauty Salon | Online Booking</title>
+<style>
+body{font-family:Arial,sans-serif;background:#fbf5f8;margin:0;color:#30242d}
+main{max-width:620px;margin:28px auto;padding:24px;background:white;border-radius:16px;box-shadow:0 8px 32px #4b253018}
+h1{margin-top:0;color:#8b3365}p{line-height:1.5;color:#66535f}
+label{display:block;font-weight:600;margin:14px 0 6px}
+input,select,textarea{box-sizing:border-box;width:100%;padding:11px;border:1px solid #d9cbd5;border-radius:8px;font:inherit;background:white}
+button{margin-top:20px;padding:12px 18px;border:0;border-radius:9px;background:#8b3365;color:white;font-weight:700;cursor:pointer}
+#message{margin-top:16px;white-space:pre-wrap}
+</style>
+</head>
+<body><main>
+<h1>Book Your Salon Appointment</h1>
+<p>Choose your service, staff member, date and time. Your request will remain pending until the salon confirms it.</p>
+<form id="booking">
+<label>Full name</label><input name="full_name" required maxlength="150">
+<label>Email</label><input name="email" type="email" required>
+<label>Phone</label><input name="phone" type="tel" required>
+<label>Service</label><select name="service_id" required><option value="">Loading services?</option></select>
+<label>Staff member</label><select name="staff_id" required><option value="">Loading staff?</option></select>
+<label>Date</label><input name="appointment_date" id="date" type="date" required>
+<label>Time</label><input name="appointment_time" type="time" required>
+<label>Notes (optional)</label><textarea name="notes" rows="3" maxlength="500"></textarea>
+<button type="submit">Request Booking</button>
+</form><div id="message" role="status"></div>
+</main>
+<script>
+const API="http://127.0.0.1:8000/api/public-booking";
+const form=document.getElementById("booking"), msg=document.getElementById("message");
+document.getElementById("date").min=new Date().toLocaleDateString("en-CA");
+function fill(select, items, label){select.innerHTML='<option value="">Select '+label+'</option>';
+items.forEach(x=>{const o=document.createElement("option");o.value=x.id;
+o.textContent=label==="service"?(x.name+" ? ?"+x.price+" / "+x.duration_minutes+" min"):x.name;select.appendChild(o);});}
+fetch(API+"/options/").then(r=>{if(!r.ok)throw Error("Could not load booking options.");return r.json();})
+.then(d=>{fill(form.service_id,d.services,"service");fill(form.staff_id,d.staff,"staff member");})
+.catch(e=>{msg.textContent=e.message+" Make sure the salon backend is running.";});
+form.addEventListener("submit",async e=>{e.preventDefault();msg.textContent="Submitting?";
+const data=Object.fromEntries(new FormData(form).entries());
+try{const r=await fetch(API+"/book/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+const d=await r.json();if(!r.ok)throw Error(d.error||"Booking could not be submitted.");
+msg.textContent=d.message+" Reference: #"+d.appointment_id;form.reset();
+}catch(err){msg.textContent=err.message;}});
+</script></body></html>

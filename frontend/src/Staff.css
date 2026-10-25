@@ -1,0 +1,137 @@
+
+.staff-page {
+  width: 100%;
+  color: #513448;
+}
+
+.staff-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.staff-heading h2 {
+  margin: 0 0 8px;
+  font-size: 27px;
+}
+
+.staff-heading p {
+  margin: 0;
+  color: #8b7782;
+}
+
+.staff-count {
+  background: #f8eaf0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.staff-form {
+  padding: 24px;
+  margin-bottom: 25px;
+  background: white;
+  border: 1px solid #f0e3e9;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(85, 49, 67, 0.06);
+}
+
+.staff-form h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.staff-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.staff-form input,
+.staff-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid #e7d5df;
+  border-radius: 9px;
+  font-size: 14px;
+  background: white;
+}
+
+.staff-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.staff-actions button,
+.staff-table button {
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.staff-save {
+  background: #a64d78;
+  color: white;
+}
+
+.staff-cancel {
+  background: #eee4e9;
+  color: #513448;
+}
+
+.staff-table-wrapper {
+  overflow-x: auto;
+  background: white;
+  border: 1px solid #f0e3e9;
+  border-radius: 15px;
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.staff-table th,
+.staff-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #f1e8ed;
+}
+
+.staff-table th {
+  background: #f8eaf0;
+}
+
+.staff-empty {
+  text-align: center !important;
+  color: #8b7782;
+}
+
+.staff-edit {
+  background: #f8eaf0;
+  color: #513448;
+  margin-right: 6px;
+}
+
+.staff-delete {
+  background: #fde8e8;
+  color: #a12c2c;
+}
+
+@media (max-width: 650px) {
+  .staff-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .staff-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
