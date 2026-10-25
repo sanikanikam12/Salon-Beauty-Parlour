@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import "./Staff.css";
 
-const API = "http://127.0.0.1:8000/api/staff/";
+const API = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/staff/`;
 
 function Staff() {
   const [staff, setStaff] = useState([]);

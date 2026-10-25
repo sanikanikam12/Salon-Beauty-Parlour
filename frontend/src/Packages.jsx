@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import "./Packages.css";
 
-const API = "http://127.0.0.1:8000/api/salon/packages/";
-const SERVICES_API = "http://127.0.0.1:8000/api/salon/services/";
-const PURCHASES_API = "http://127.0.0.1:8000/api/salon/customer-packages/";
+const API = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/salon/packages/`;
+const SERVICES_API = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/salon/services/`;
+const PURCHASES_API = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/salon/customer-packages/`;
 
 const emptyForm = {
   name: "",

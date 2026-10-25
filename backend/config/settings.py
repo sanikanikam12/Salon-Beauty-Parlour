@@ -19,10 +19,9 @@ if _local_env.is_file():
             _os.environ.setdefault("DJANGO_SECRET_KEY", _env_line.strip().split("=", 1)[1])
             break
 SECRET_KEY = _os.environ.get("DJANGO_SECRET_KEY", "local-development-key-change-before-deployment")
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
-
+DEBUG = _os.environ.get("DEBUG", "True").lower() in {"true", "1", "yes"}
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".onrender.com"]
+ALLOWED_HOSTS += [h.strip() for h in _os.environ.get("EXTRA_ALLOWED_HOSTS", "").split(",") if h.strip()]
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -57,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+if not DEBUG:
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 
 ROOT_URLCONF = 'config.urls'
@@ -81,14 +82,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database - SQLite
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use Render PostgreSQL when DATABASE_URL is configured; otherwise use local SQLite.
+DATABASE_URL = _os.environ.get("DATABASE_URL", "").strip()
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL, conn_max_age=600, ssl_require=not DEBUG
+        )
     }
-}
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,9 +124,13 @@ USE_TZ = True
 
 
 # Static files
-STATIC_URL = 'static/'
-
-
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+if not DEBUG:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
 # CORS - React frontend
 
 CORS_ALLOWED_ORIGINS = [
@@ -128,6 +141,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5175',
     'http://127.0.0.1:5175',
 ]
+RENDER_FRONTEND_URL = _os.environ.get("FRONTEND_URL", "").rstrip("/")
+if RENDER_FRONTEND_URL and RENDER_FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(RENDER_FRONTEND_URL)
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",

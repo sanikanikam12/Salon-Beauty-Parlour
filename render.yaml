@@ -1,0 +1,35 @@
+databases:
+  - name: salon-beauty-parlour-db
+    databaseName: salon
+    user: salon
+    plan: free
+
+services:
+  - type: web
+    name: salon-beauty-parlour-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: salon-beauty-parlour-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: FRONTEND_URL
+        value: https://salon-beauty-parlour.onrender.com
+
+  - type: web
+    name: salon-beauty-parlour
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build && node scripts/configure-deployed-pages.js
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://salon-beauty-parlour-api.onrender.com

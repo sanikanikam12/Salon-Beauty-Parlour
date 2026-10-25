@@ -1,7 +1,7 @@
-﻿import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./Notifications.css";
 
-const API = "http://127.0.0.1:8000/api/salon/notifications/";
+const API = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/salon/notifications/`;
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);

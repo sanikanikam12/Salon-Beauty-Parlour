@@ -1,7 +1,7 @@
-﻿import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./Reports.css";
 
-const API_URL = "http://127.0.0.1:8000/api/salon/reports/";
+const API_URL = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/salon/reports/`;
 
 function formatDate(value) {
   if (!value) return "—";
