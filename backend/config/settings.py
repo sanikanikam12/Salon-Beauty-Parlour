@@ -43,12 +43,12 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
 
     # CORS middleware must be before CommonMiddleware
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
+'django.middleware.common.CommonMiddleware',
 
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -183,3 +183,34 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# GITHUB_PAGES_CORS_FIX
+from corsheaders.defaults import default_headers as _default_cors_headers
+from corsheaders.defaults import default_methods as _default_cors_methods
+
+def _cors_list(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [x.strip() for x in value.split(",") if x.strip()]
+    return list(value)
+
+_github_origin = "https://sanikanikam12.github.io"
+
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(
+    _cors_list(globals().get("CORS_ALLOWED_ORIGINS")) + [_github_origin]
+))
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
+    _cors_list(globals().get("CSRF_TRUSTED_ORIGINS")) + [_github_origin]
+))
+CORS_ALLOW_HEADERS = list(dict.fromkeys(
+    _cors_list(globals().get("CORS_ALLOW_HEADERS", _default_cors_headers))
+    + ["x-user-role", "x-user-email"]
+))
+CORS_ALLOW_METHODS = list(dict.fromkeys(
+    _cors_list(globals().get("CORS_ALLOW_METHODS", _default_cors_methods))
+    + ["OPTIONS"]
+))
+CORS_ALLOW_CREDENTIALS = True
+del _github_origin, _default_cors_headers, _default_cors_methods, _cors_list
