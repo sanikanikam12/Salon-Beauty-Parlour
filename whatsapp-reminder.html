@@ -1,0 +1,170 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salon WhatsApp Reminders</title>
+<style>
+body{font-family:Arial,sans-serif;background:#fbf5f8;color:#382532;margin:0;padding:20px}
+main{max-width:650px;margin:20px auto;background:#fff;padding:24px;border-radius:14px;box-shadow:0 5px 25px #0001}
+h2{color:#873663}label{display:block;font-weight:bold;margin:14px 0 6px}
+input,select,textarea{box-sizing:border-box;width:100%;padding:11px;border:1px solid #d8c8d2;border-radius:8px;font:inherit}
+button{margin-top:18px;padding:12px 18px;border:0;border-radius:8px;background:#16834b;color:white;font-weight:bold;cursor:pointer}
+#status{margin-top:15px;line-height:1.5;white-space:pre-wrap}
+.note{color:#665866;font-size:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+<h2>WhatsApp Appointment Reminder</h2>
+<p class="note">Select an appointment if available, verify the phone number and details, then open WhatsApp to send the reminder.</p>
+
+<label>Load existing appointment</label>
+<select id="appointments"><option value="">Loading appointments…</option></select>
+
+<form id="reminder">
+<label>Customer name</label><input id="name" required>
+<label>Customer WhatsApp number</label><input id="phone" type="tel" placeholder="10-digit mobile number" required>
+<label>Service</label><input id="service" required>
+<label>Appointment date</label><input id="date" type="date" required>
+<label>Appointment time</label><input id="time" type="time" required>
+<label>Message</label><textarea id="message" rows="5"></textarea>
+<button type="submit">Open WhatsApp Reminder</button>
+</form>
+<div id="status" role="status"></div>
+<p class="note">Important: WhatsApp opens with the message pre-filled. Check the recipient and press Send yourself. This does not send messages automatically.</p>
+</main>
+
+<script>
+const API = "http://127.0.0.1:8000/api/salon";
+const $ = id => document.getElementById(id);
+const statusBox = $("status");
+let appointments = [];
+
+function getToken() {
+  for (const key of Object.keys(localStorage)) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key));
+      if (value && typeof value.token === "string" && value.token) return value.token;
+    } catch (_) {}
+    if (/^(token|access_token)$/i.test(key)) {
+      const value = localStorage.getItem(key);
+      if (value) return value;
+    }
+  }
+  return "";
+}
+async function getApi(path) {
+  const token = getToken();
+  if (!token) throw Error("Please log in to the salon app first. You can still enter the reminder details manually below.");
+  const response = await fetch(API + path, {headers: {"Authorization": "Bearer " + token}});
+  if (!response.ok) throw Error("Could not load appointment data. Please check login or fill the fields manually.");
+  const data = await response.json();
+  return Array.isArray(data) ? data : (data.appointments || data.customers || data.results || data.data || []);
+}
+function val(obj, keys) {
+  for (const key of keys) {
+    const value = obj && obj[key];
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return "";
+}
+function dateValue(value) {
+  const match = String(value || "").match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : "";
+}
+function timeValue(value) {
+  const match = String(value || "").match(/(\d{2}):(\d{2})/);
+  return match ? match[1] + ":" + match[2] : "";
+}
+function fillForm(a) {
+  $("name").value = a.name || "";
+  $("phone").value = a.phone || "";
+  $("service").value = a.service || "";
+  $("date").value = a.date || "";
+  $("time").value = a.time || "";
+  makeMessage();
+}
+function makeMessage() {
+  const name = $("name").value.trim() || "Customer";
+  const service = $("service").value.trim() || "salon service";
+  const date = $("date").value;
+  const time = $("time").value;
+  let formattedDate = date;
+  if (date) {
+    const parts = date.split("-");
+    formattedDate = parts[2] + "-" + parts[1] + "-" + parts[0];
+  }
+  $("message").value =
+    "Hi " + name + "! 😊 This is a reminder for your " + service +
+    " appointment at our salon on " + formattedDate +
+    " at " + time + ". We look forward to seeing you!";
+}
+["name","service","date","time"].forEach(id => $(id).addEventListener("input", makeMessage));
+
+$("appointments").addEventListener("change", () => {
+  const a = appointments[Number($("appointments").value)];
+  if (a) fillForm(a);
+});
+(async function loadAppointments() {
+  try {
+    const [rawAppointments, customers] = await Promise.all([
+      getApi("/appointments/"), getApi("/customers/")
+    ]);
+    appointments = rawAppointments.map(a => {
+      const customerId = val(a, ["customer_id"]) || (a.customer && a.customer.id);
+      const c = customers.find(x => String(x.id) === String(customerId)) || {};
+      return {
+        name: val(a, ["customer_name","full_name"]) || val(a.customer, ["full_name","name"]) || val(c, ["full_name","name"]),
+        phone: val(a, ["customer_phone","phone"]) || val(a.customer, ["phone"]) || val(c, ["phone"]),
+        service: val(a, ["service_name"]) || val(a.service, ["name"]) || val(a, ["service"]),
+        date: dateValue(val(a, ["appointment_date","date"])),
+        time: timeValue(val(a, ["appointment_time","time"])),
+        status: val(a, ["status"]),
+        id: val(a, ["id"])
+      };
+    }).filter(a => a.id && (a.name || a.phone));
+
+    const select = $("appointments");
+    select.innerHTML = '<option value="">Choose an appointment (optional)</option>';
+    appointments.forEach((a, i) => {
+      const option = document.createElement("option");
+      option.value = String(i);
+      option.textContent = "#" + a.id + " — " + (a.name || "Customer") + " — " +
+        (a.service || "Service") + " — " + (a.date || "Date not available") +
+        " (" + (a.status || "status unknown") + ")";
+      select.appendChild(option);
+    });
+    statusBox.textContent = appointments.length
+      ? "Loaded " + appointments.length + " appointment(s). Select one or enter details manually."
+      : "No appointment records found. You can enter the reminder details manually.";
+    if (appointments.length) {
+      select.value = "0";
+      fillForm(appointments[0]);
+    } else makeMessage();
+  } catch (err) {
+    $("appointments").innerHTML = '<option value="">Enter appointment details manually</option>';
+    statusBox.textContent = err.message;
+    makeMessage();
+  }
+})();
+
+$("reminder").addEventListener("submit", e => {
+  e.preventDefault();
+  const rawPhone = $("phone").value.replace(/\D/g, "");
+  let phone = rawPhone;
+  if (phone.length === 10) phone = "91" + phone;
+  else if (phone.length === 11 && phone.startsWith("0")) phone = "91" + phone.slice(1);
+  if (phone.length < 10) {
+    statusBox.textContent = "Please enter a valid phone number with country code.";
+    return;
+  }
+  makeMessage();
+  const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent($("message").value);
+  window.open(url, "_blank", "noopener");
+  statusBox.textContent = "WhatsApp opened. Check the number and message, then press Send.";
+});
+makeMessage();
+</script>
+</body>
+</html>
