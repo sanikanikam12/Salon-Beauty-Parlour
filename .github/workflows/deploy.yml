@@ -1,4 +1,4 @@
-﻿name: Deploy frontend to GitHub Pages
+name: Deploy frontend to GitHub Pages
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
       - run: npm run build && node scripts/configure-deployed-pages.js
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: https://salon-beauty-parlour-api.onrender.com
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
